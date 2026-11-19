@@ -16,6 +16,7 @@ import type { DrawToolMode, PlotChangeMeta } from "./map/draw";
 import { plotGeometry } from "./map/geo";
 import { DEFAULT_ROAD_WIDTH } from "./map/roads";
 import { AboutModal } from "./ui/AboutModal";
+import { remapEdgeStates } from "./ui/edgeRemap";
 import { LeftPanel, type EdgeState } from "./ui/LeftPanel";
 import { MapCanvas, type MapCanvasHandle } from "./ui/MapCanvas";
 import { RightPanel } from "./ui/RightPanel";
@@ -55,6 +56,9 @@ export default function App() {
   const mapRef = useRef<MapCanvasHandle>(null);
 
   const [plot, setPlot] = useState<LngLat[]>(() => INITIAL_SAMPLE?.plot ?? []);
+  // Latest committed plot, so an edit can be compared with the outline it changed.
+  const plotRef = useRef(plot);
+  plotRef.current = plot;
   const [activeSampleId, setActiveSampleId] = useState<string | null>(() => INITIAL_SAMPLE?.id ?? null);
   const [edgeStates, setEdgeStates] = useState<EdgeState[]>(() =>
     INITIAL_SAMPLE ? edgeStatesFromSample(INITIAL_SAMPLE) : [],
@@ -136,13 +140,10 @@ export default function App() {
         setEdgeStates(edgeStatesFromCandidates(newPlot.length, detected));
         return;
       }
-      setEdgeStates((prev) => {
-        if (prev.length === newPlot.length) return prev;
-        return Array.from({ length: newPlot.length }, (_, i) => {
-          if (i < prev.length) return prev[i];
-          return { faces: false, width: DEFAULT_ROAD_WIDTH, roadName: "" };
-        });
-      });
+      const oldPlot = plotRef.current;
+      setEdgeStates((prev) =>
+        remapEdgeStates(oldPlot, newPlot, prev, () => ({ faces: false, width: DEFAULT_ROAD_WIDTH, roadName: "" })),
+      );
     },
     [],
   );
