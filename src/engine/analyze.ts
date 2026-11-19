@@ -74,6 +74,25 @@ export function analyze(input: SiteInput, data: SiteData = {}): Analysis {
   const type = BUILDING_TYPES[input.buildingType];
   const issues: PlotIssue[] = [];
 
+  if (input.plot.length < 3) {
+    // Nothing to measure yet (the user is still drawing).
+    const ev = evaluateRules({ plotArea: 0, localEdgeCount: 0, frontages: [], buildingType: input.buildingType, stationDistance: null, disabled: new Set() });
+    return {
+      input,
+      origin: input.plot[0] ?? [0, 0],
+      plotLocal: [],
+      sourceEdge: [],
+      plotArea: 0,
+      issues: [{ code: "too-few-points", message: "Draw the plot: click each corner, then click the first corner again.", severity: "error" }],
+      zone: ZONE_Y10,
+      rules: ev.rules,
+      envelopes: { lowrise: emptyEnvelope(ev.lowrise), highrise: null },
+      highriseBlockedReason: ev.highriseBlockedReason,
+      maxGfa: 0,
+      designs: [],
+      computeMs: performance.now() - t0,
+    };
+  }
   const frame = createFrame(input.plot);
   const drawn: Ring = input.plot.map((p) => frame.toLocal(p));
   const { ring, sourceEdge } = normalizeRing(drawn);

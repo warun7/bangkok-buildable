@@ -5,7 +5,7 @@ import { EXTRA_LARGE_AREA, HIGHRISE_HEIGHT } from "../rules/apply";
 import { ZONE_Y10 } from "../rules/zone";
 import { difference, intersection, union } from "../geom/boolean";
 import { multiArea } from "../geom/polygon";
-import { insetToArea, uniformInset } from "../geom/setback";
+import { fastInset, fastInsetToArea } from "./shape";
 import { largestRect } from "../geom/rect";
 import { makeAllowed } from "./allowed";
 import { metricsFor, parkingRequired } from "./metrics";
@@ -39,16 +39,44 @@ interface StackResult {
 }
 
 const ROOF_MARGIN = 0.01;
+/** Thinnest plate depth worth building around a courtyard, metres. */
+const MIN_COURTYARD_DEPTH = 10;
+
+type Allowed = (t: number) => MultiPolygon;
+type PlateFn = (shape: MultiPolygon, top: number) => { plate: MultiPolygon; area: number };
+
+// Strategies try many stacks on the same few shapes; clipping is the expensive part, so each
+// (shape, floor-top height) plate is computed once per allowed-space function.
+const plateCaches = new WeakMap<Allowed, PlateFn>();
+function plateFn(allowed: Allowed): PlateFn {
+  let fn = plateCaches.get(allowed);
+  if (fn) return fn;
+  const byShape = new Map<MultiPolygon, Map<number, { plate: MultiPolygon; area: number }>>();
+  fn = (shape, top) => {
+    let m = byShape.get(shape);
+    if (!m) byShape.set(shape, (m = new Map()));
+    const key = Math.round(top * 1000);
+    let hit = m.get(key);
+    if (!hit) {
+      const plate = intersection(shape, allowed(top));
+      hit = { plate, area: multiArea(plate) };
+      m.set(key, hit);
+    }
+    return hit;
+  };
+  plateCaches.set(allowed, fn);
+  return fn;
+}
 
 /** Places slots bottom-up, clipping each to the allowed region at its top. Stops at the first empty plate. */
-function stack(slots: Slot[], allowed: (t: number) => MultiPolygon, gfaCap: number, minPlate = 60): StackResult {
+function stack(slots: Slot[], allowed: Allowed, gfaCap: number, minPlate = 60): StackResult {
+  const plateAt = plateFn(allowed);
   const floors: Floor[] = [];
   let z = 0;
   let gfa = 0;
   for (const s of slots) {
     const top = z + s.h;
-    const plate = intersection(s.shape, allowed(top));
-    const area = multiArea(plate);
+    const { plate, area } = plateAt(s.shape, top);
     if (area < minPlate) break;
     if (gfa + area > gfaCap + 1e-6) break;
     floors.push({ index: floors.length, z, h: s.h, use: s.use, polygons: plate, area });
@@ -90,18 +118,22 @@ function buildWithParking(
     const slots: Slot[] = [{ use: "lobby", h: type.groundFloorHeight, shape: baseShape }];
     for (let i = 0; i < p; i++) slots.push({ use: "parking", h: type.parkingFloorHeight, shape: baseShape });
     for (let i = slots.length; i < opts.maxStoreys; i++) slots.push({ use: type.use, h: type.typicalFloorHeight, shape: mainShape });
-    let res = stack(slots, allowed, opts.gfaCap);
-    // Respect a cap on the main use (hotel rooms / office area) by trimming top floors.
-    while (res.floors.length > 1 + p) {
-      const mainArea = res.floors.filter((f) => f.use === type.use).reduce((s, f) => s + f.area, 0);
-      if (mainArea <= opts.mainUseCap + 1e-6) break;
-      res = stack(slots.slice(0, res.floors.length - 1), allowed, opts.gfaCap);
+    const res = stack(slots, allowed, opts.gfaCap);
+    // Respect a cap on the main use (hotel rooms / office area) by dropping top floors. Stacking is
+    // prefix-stable, so removing the top floor gives the same result as stacking one slot fewer.
+    let mainTotal = res.floors.filter((f) => f.use === type.use).reduce((s, f) => s + f.area, 0);
+    while (res.floors.length > 1 + p && mainTotal > opts.mainUseCap + 1e-6) {
+      const top = res.floors.pop()!;
+      if (top.use === type.use) mainTotal -= top.area;
+      res.gfa -= top.area;
+      res.height = top.z;
     }
     const parkingFloorsBuilt = res.floors.filter((f) => f.use === "parking").length;
     const nonParking = res.gfa - res.floors.filter((f) => f.use === "parking").reduce((s, f) => s + f.area, 0);
     const mainArea = res.floors.filter((f) => f.use === type.use).reduce((s, f) => s + f.area, 0);
     const units = type.avgUnitSize ? Math.floor((mainArea * type.efficiency) / type.avgUnitSize) : 0;
-    const required = parkingRequired(type, { nonParkingGfa: nonParking, mainArea, units, height: res.height, gfa: res.gfa });
+    const largestFloor = res.floors.reduce((s, f) => Math.max(s, f.area), 0);
+    const required = parkingRequired(type, { nonParkingGfa: nonParking, mainArea, units, height: res.height, gfa: res.gfa, largestFloor });
     const provided = Math.floor(
       res.floors.filter((f) => f.use === "parking").reduce((s, f) => s + f.area, 0) / type.grossAreaPerCar,
     );
@@ -165,24 +197,54 @@ function lowriseCourtyard(input: DesignInput): Design | null {
     const allowed = makeAllowed(input.ring, v.spec, v.footprint);
     const maxStoreys = storeysUnder(HIGHRISE_HEIGHT - ROOF_MARGIN, type.groundFloorHeight, type.typicalFloorHeight);
     const gfaCap = Math.min(ev.caps.maxGfa, v.cap);
-    // Perimeter block: keep plates no deeper than daylight allows; the middle becomes a courtyard.
-    const core = uniformInset(v.footprint, type.maxPlateDepth);
-    const ringShape = multiArea(core) > 150 ? (difference2(v.footprint, core) ?? v.footprint) : v.footprint;
-    const courtyard = ringShape !== v.footprint;
-    // Floors come in whole plates, so the plate that fills the cap exactly is cap ÷ storeys. A bigger
-    // plate would hit the cap a floor early and build less.
-    let target = Math.min(
-      multiArea(ringShape),
-      coverageLimit(input, Math.min(gfaCap, maxStoreys * multiArea(ringShape)), 1),
-      (gfaCap - 1) / maxStoreys,
-    );
-    let res: (StackResult & { parkingFloors: number }) | null = null;
-    for (let iter = 0; iter < 6; iter++) {
-      const shape = target >= multiArea(ringShape) - 1 ? ringShape : insetToArea(ringShape, target).shape;
-      res = buildWithParking(input, allowed, shape, shape, { maxStoreys, gfaCap, mainUseCap: useCapGfa(input) });
+    const ratio = type.use === "residential" ? 0.3 : 0.1;
+    const n = maxStoreys;
+    const fpArea = multiArea(v.footprint);
+    // With n equal floors on ground coverage A, open space is plot − A and the rules need
+    // plot − A ≥ max(4% × n·A, ratio × A), so A ≤ plot / (1 + max(0.04·n, ratio)). Floors come in whole
+    // plates, so the plate that fills the cap exactly is cap ÷ n; a bigger one hits the cap a floor early.
+    let target = Math.min(fpArea, (gfaCap - 1) / n, input.plotArea / (1 + Math.max((ZONE_Y10.minOsr / 100) * n, ratio)));
+
+    // Perimeter block where the plot allows: a ring of plates no deeper than daylight allows (thinner if
+    // the open-space target needs it) around an open courtyard. Sized by depth, which is one inset of the
+    // plain footprint per step; insetting the ring itself is far slower.
+    const ringAt = (depth: number) => {
+      const core = fastInset(v.footprint, depth);
+      return multiArea(core) > 150 ? difference2(v.footprint, core) : null;
+    };
+    let shape: MultiPolygon | null = null;
+    let courtyard = false;
+    const deep = ringAt(type.maxPlateDepth);
+    if (deep && multiArea(deep) <= target) {
+      shape = deep;
+      courtyard = true;
+    } else if (deep) {
+      const thin = ringAt(MIN_COURTYARD_DEPTH);
+      if (thin && multiArea(thin) <= target) {
+        let lo = MIN_COURTYARD_DEPTH;
+        let hi = type.maxPlateDepth;
+        shape = thin;
+        for (let i = 0; i < 7; i++) {
+          const mid = (lo + hi) / 2;
+          const r = ringAt(mid);
+          if (r && multiArea(r) <= target) {
+            shape = r;
+            lo = mid;
+          } else hi = mid;
+        }
+        courtyard = true;
+      }
+    }
+    if (!shape) shape = target >= fpArea - 1 ? v.footprint : fastInsetToArea(v.footprint, target);
+    let res = buildWithParking(input, allowed, shape, shape, { maxStoreys, gfaCap, mainUseCap: useCapGfa(input) });
+    // Safety net for inset tolerance: shrink slightly until the open space really passes.
+    for (let iter = 0; iter < 4; iter++) {
       const metrics = metricsFor(input, res.floors);
       if (metrics.openSpace + 0.5 >= requiredOpen(input, metrics)) break;
-      target *= 0.94;
+      target *= 0.95;
+      shape = fastInsetToArea(v.footprint, target);
+      courtyard = false;
+      res = buildWithParking(input, allowed, shape, shape, { maxStoreys, gfaCap, mainUseCap: useCapGfa(input) });
     }
     if (!res || !res.floors.length) continue;
     // The 6 m-clearance variant only makes sense if it really goes over 10,000 m².
@@ -282,7 +344,7 @@ function towerOnPodium(input: DesignInput): Design | null {
   let res: (StackResult & { parkingFloors: number }) | null = null;
   for (let iter = 0; iter < 8; iter++) {
     const fa = multiArea(footprint);
-    const inset = podiumTarget >= fa - 1 ? footprint : insetToArea(footprint, Math.max(podiumTarget, rect.area)).shape;
+    const inset = podiumTarget >= fa - 1 ? footprint : fastInsetToArea(footprint, Math.max(podiumTarget, rect.area));
     const podium = union(inset, tower);
     res = buildWithParking(input, allowed, podium, tower, { maxStoreys: 120, gfaCap, mainUseCap: useCapGfa(input) });
     const metrics = metricsFor(input, res.floors);
