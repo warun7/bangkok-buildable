@@ -34,3 +34,8 @@ export const BKK2544 = {
 export function cite(src: { doc: string; url: string }, clause: string): Citation {
   return { doc: src.doc, clause, url: src.url };
 }
+
+export const EIA2566 = {
+  doc: "MNRE Notification on projects requiring an EIA, B.E. 2566 (2023)",
+  url: "https://www.onep.go.th/wp-content/uploads/2024/01/2567-01-05-p240-mnre-announcement.pdf",
+};

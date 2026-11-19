@@ -36,8 +36,17 @@ export function parkingRequired(type: BuildingTypeSpec, b: ParkingBasis): number
     return Math.max(bigUnits, large);
   }
   if (type.id === "office") return Math.max(Math.ceil(b.mainArea / 60), large);
-  // Hotel: halls and shops are not modelled (assumed none), so the large-building minimum governs.
-  return large;
+  // Hotel: MR 7 (as amended 2555) counts only halls and shops, which we do not model (assumed none).
+  // The BMA Building Control Ordinance 2544 cl. 84(2) still counts rooms; we take the larger.
+  return Math.max(hotelRoomParking(b.units), large);
+}
+
+/** BMA Ordinance 2544 cl. 84(2): 10 cars for the first 30 rooms, 1 per 5 rooms to 100, then 1 per 10. */
+export function hotelRoomParking(rooms: number): number {
+  if (rooms <= 0) return 0;
+  if (rooms <= 30) return 10;
+  if (rooms <= 100) return 10 + Math.ceil((rooms - 30) / 5);
+  return 24 + Math.ceil((rooms - 100) / 10);
 }
 
 export function countUnits(type: BuildingTypeSpec, mainArea: number): number {

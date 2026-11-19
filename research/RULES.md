@@ -73,7 +73,8 @@ ordinary parking floors count. Applied.
 | B-HR-CLEAR | High-rise or extra-large: outermost parts ≥ 6 m from neighbouring land **and** from public roads; plus an unroofed fire-truck road ≥ 6 m wide around the building | | MR 33 cl. 3, 4 |
 | B-LARGE | Large building: total or any floor > 2,000 m², or ≥ 15 m high with > 1,000 m² | | MR 7 cl. 1 (12) |
 | B-CANAL | Setback from a public waterway | < 10 m wide: 3 m; ≥ 10 m: 6 m | MR 55 cl. 42; plan cl. 40 (2) |
-| B-PARK | Car parking (Bangkok) | condo: 1 per unit for units ≥ 60 m²; office: 1 per 60 m²; hotel: 1 per 10 m² of hall + 1 per 20 m² of commercial area; any large building: at least 1 per 120 m² of building area, whichever is more | MR 7 cl. 2, 3 (1) |
+| B-PARK | Car parking (Bangkok) | condo: 1 per unit for units ≥ 60 m²; office: 1 per 60 m²; hotel: MR 7 (as amended by MR 64, 2555) asks 1 per 10 m² of hall + 1 per 20 m² of commercial area, while BMA Ordinance 2544 cl. 84(2) still asks 10 cars for the first 30 rooms, 1 per 5 rooms to 100, 1 per 10 beyond; any large building: at least 1 per 120 m² of building area, whichever is more. **Tool uses the larger of the two hotel rules.** | MR 7 cl. 2, 3 (1); BMA Ordinance 2544 cl. 83–85 |
+| X-EIA | Environmental impact assessment | condo ≥ 80 units or ≥ 4,000 m² usable; hotel ≥ 80 rooms or ≥ 4,000 m² usable; private office that is high-rise (≥ 23 m) or extra-large (≥ 10,000 m²). Report approved before the permit | MNRE Notification B.E. 2566, Annex 4 items 31, 30, 27.3 (onep.go.th, primary) |
 
 "Right-of-way" (เขตทาง) = full width between the property lines on both sides, including carriageway,
 footpaths, planting strips and ditches (BKK Ord. 2544 cl. 5 (4)).
@@ -113,5 +114,6 @@ plan says building lines are measured from the *planned* right-of-way (cl. 36 pa
    (MR 55 cl. 44 para 3).
 7. **Open space** = plot area − building footprint (ground coverage); parking and podium roofs count as
    covered. Permeable ≥ 50 % of that is reported as a landscape requirement.
-8. **Not modelled**: FAR bonuses, planned road widenings, airport height zones (none over ย.10-4), EIA
+8. **Not modelled**: FAR bonuses, planned road widenings, airport height zones (none over ย.10-4). EIA is
+   reported as a process duty (warning), not a design limit
    (thresholds not verified from primary text; flagged as "likely required" for large condos/hotels).

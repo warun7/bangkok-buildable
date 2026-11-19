@@ -189,15 +189,19 @@ export function runChecks(input: DesignInput, design: Design, mx: DesignMetricsX
     });
   }
 
-  // 10. EIA: thresholds not verified from primary text, so this is a warning at most.
-  const eiaLikely =
-    (type.id === "condo" && ((mx.units ?? 0) >= 80 || mx.gfa >= 4000)) || (type.id === "hotel" && (mx.rooms ?? 0) >= 80);
+  // 10. EIA (MNRE notification 2566, Annex 4 items 27.3, 30, 31). A process duty, so a warning, not a fail.
+  const eiaNeeded =
+    type.id === "office"
+      ? high
+      : type.id === "hotel"
+        ? (mx.rooms ?? 0) >= 80 || mx.nonParkingGfa >= 4000
+        : (mx.units ?? 0) >= 80 || mx.nonParkingGfa >= 4000;
   checks.push({
     id: "eia",
     label: "Environmental impact assessment",
-    required: "commonly cited: 80 units or rooms, or 4,000 m²",
-    actual: eiaLikely ? "likely required before the permit" : "probably not required",
-    status: eiaLikely ? "warn" : "info",
+    required: type.id === "office" ? "needed for a high-rise or extra-large office" : `needed from 80 ${type.id === "hotel" ? "rooms" : "units"} or 4,000 m² usable`,
+    actual: eiaNeeded ? "needed: approval comes before the building permit" : "not needed at this size",
+    status: eiaNeeded ? "warn" : "info",
     ruleId: RULE.EIA,
   });
 

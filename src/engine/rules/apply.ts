@@ -1,5 +1,5 @@
 import type { AppliedRule, BuildingTypeId, EdgeSetback, EnvelopeSpec, SkyPlane } from "../types";
-import { BKK2544, MR33, MR55, MR7, PLAN, PLAN_AMEND, cite } from "./sources";
+import { BKK2544, EIA2566, MR33, MR55, MR7, PLAN, PLAN_AMEND, cite } from "./sources";
 import {
   Y10_EXEMPT_FRONTAGE,
   Y10_EXEMPT_ROAD_WIDTH,
@@ -281,10 +281,14 @@ export function evaluateRules(ctx: SiteContext): RuleEvaluation {
         ? "1 per unit of ≥ 60 m²; large buildings at least 1 per 120 m² of floor area"
         : ctx.buildingType === "office"
           ? "1 per 60 m² of office floor area"
-          : "1 per 10 m² of hall + 1 per 20 m² of commercial space; large buildings at least 1 per 120 m²",
+          : "rooms: 10 for the first 30, then 1 per 5 rooms to 100 and 1 per 10 beyond; large buildings at least 1 per 120 m²",
     kind: "check",
-    citation: cite(MR7, "cl. 2–3 (1)"),
+    citation: ctx.buildingType === "hotel" ? cite(BKK2544, "cl. 83–85 (rooms: cl. 84 (2)); MR 7 cl. 2–3 as amended by MR 64") : cite(MR7, "cl. 2–3 (1); BMA Ordinance 2544 cl. 84"),
     applies: true,
+    note:
+      ctx.buildingType === "hotel"
+        ? "MR 7 (amended 2555) asks only for halls and shops (1 per 10 m² and 1 per 20 m²); the BMA ordinance still counts rooms. We require the larger. Halls and shops are not modelled."
+        : undefined,
   });
   rules.push({
     id: RULE.BONUS,
@@ -309,12 +313,15 @@ export function evaluateRules(ctx: SiteContext): RuleEvaluation {
   rules.push({
     id: RULE.EIA,
     title: "Environmental impact assessment",
-    titleTh: "รายงาน EIA",
-    value: "large condominiums and hotels need an EIA approved before the building permit",
+    titleTh: "รายงานการประเมินผลกระทบสิ่งแวดล้อม (EIA)",
+    value:
+      ctx.buildingType === "office"
+        ? "needed if the office is a high-rise (≥ 23 m) or extra-large (≥ 10,000 m²)"
+        : `needed from 80 ${ctx.buildingType === "hotel" ? "rooms" : "units"} or 4,000 m² of usable area`,
     kind: "info",
-    citation: { doc: "Ministry of Natural Resources & Environment notification (ONEP)", clause: "thresholds not verified from primary text" },
+    citation: cite(EIA2566, ctx.buildingType === "office" ? "Annex 4 item 27.3" : ctx.buildingType === "hotel" ? "Annex 4 item 30" : "Annex 4 item 31"),
     applies: true,
-    note: "Commonly cited thresholds: 80 units/rooms or 4,000 m². Shown as a warning only.",
+    note: "A process requirement, not a design limit: the report must be approved before the building permit.",
   });
   rules.push({
     id: "Z-PLAN",
@@ -324,7 +331,6 @@ export function evaluateRules(ctx: SiteContext): RuleEvaluation {
     citation: cite(PLAN_AMEND, "cl. 3–28 (factory items only)"),
     applies: true,
   });
-  void BKK2544;
 
   // --- envelope specs ---------------------------------------------------------
   const setbacksFor = (regime: "lowrise" | "highrise"): EdgeSetback[] => {
