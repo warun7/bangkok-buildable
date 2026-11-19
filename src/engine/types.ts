@@ -163,3 +163,58 @@ export interface Design {
   metrics: DesignMetrics;
   checks: Check[];
 }
+
+// ---------------------------------------------------------------------------
+// Analysis: everything the UI renders for one set of inputs.
+
+export interface ZoneInfo {
+  /** Zone code as in the plan, e.g. "ย.10". */
+  code: string;
+  /** Romanised code for UI, e.g. "Y.10". */
+  codeLatin: string;
+  name: string;
+  nameTh: string;
+  /** Map colour used by the plan, hex. */
+  colour: string;
+  maxFar: number;
+  /** Minimum open space ratio as a percentage. */
+  minOsr: number;
+  planTitle: string;
+}
+
+export interface PlotIssue {
+  code: string;
+  message: string;
+  severity: "error" | "warning";
+}
+
+export interface FrontageCandidate {
+  edgeIndex: number;
+  roadName?: string;
+  roadClass?: string;
+  /** Metres from the edge midpoint to the road centreline. */
+  distance: number;
+  suggestedWidth: number;
+}
+
+export interface Analysis {
+  input: SiteInput;
+  /** Origin of the local metre frame; deck.gl renders local geometry with METER_OFFSETS from here. */
+  origin: LngLat;
+  /** Plot ring in local metres after normalisation (CCW). */
+  plotLocal: Ring;
+  /** For each local edge, the index of the drawn edge it came from. */
+  sourceEdge: number[];
+  plotArea: number;
+  issues: PlotIssue[];
+  zone: ZoneInfo;
+  rules: AppliedRule[];
+  /** Allowed space below the high-rise threshold, and above it when the site qualifies. */
+  envelopes: { lowrise: Envelope; highrise: Envelope | null };
+  /** Why a high-rise is not allowed here, when it is not. */
+  highriseBlockedReason?: string;
+  maxGfa: number;
+  designs: Design[];
+  /** Milliseconds spent computing, for the perf readout. */
+  computeMs: number;
+}
