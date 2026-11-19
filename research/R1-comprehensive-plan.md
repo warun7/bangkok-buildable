@@ -105,7 +105,7 @@ Colour and Thai names: wazzadu (21 Aug 2025, https://www.wazzadu.com/article/730
 | ส. | Blue | สถาบันราชการและสาธารณูปการ (government institutions and public utilities) | not found | not found | [secondary] |
 
 Notes:
-- thaipropertymentor also lists a "พ.5" with no values, and "ก.1" with 0.5 and 100% appearing in two rows. Its codes are cross-checked above. [secondary]
+- thaipropertymentor lists "พ.5" with no values, and gives the same 0.5 / 100% pair for both ก.1 and ก.3 (two separate rows). Its codes are cross-checked above. [secondary]
 - Thansettakij's ก.1 and ก.2 sub-codes (for example "ก.1-1", "ก.1-5") are not standard codes and are not used here. [secondary]
 
 Exact Thai colour definitions quoted from wazzadu (secondary), with translations:
@@ -143,7 +143,7 @@ Zone purposes (secondary, wazzadu, Anderson):
 - LAD, Aug 2026: soi (lane) width under 10 to 12 m restricts extra-large buildings in Sukhumvit and Sathon areas. [draft, secondary, no code given]
 - Nation, 25 Sep 2026: minimum parking requirements drop 25% within 500 m of 20 major stations. [draft, secondary]
 
-**Items not found at all (for 2556):** the 12 m road width rule, the 10,000 m² "large building" threshold, and transit-distance rules tied to these codes. Whether any of these numbers exist in the 2556 text could not be verified. The decoded gazette shows the word "เขตทาง" (road right-of-way) about 330 times, but in clauses on fuel stations, factories and similar uses, and the decode is too garbled to attribute any figure. [unverified]
+**Items not found at all (for 2556):** the 12 m road width rule, the 10,000 m² "large building" threshold, and transit-distance rules tied to these codes. Whether any of these numbers exist in the 2556 text could not be verified. The decoded gazette shows the word "เขตทาง" (road right-of-way) 334 times, but in clauses on fuel stations, factories and similar uses, and the decode is too garbled to attribute any figure. [unverified]
 
 ---
 

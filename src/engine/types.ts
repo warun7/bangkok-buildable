@@ -14,7 +14,7 @@ export type BuildingTypeId = "condo" | "office" | "hotel";
 
 /** A plot edge that faces a public road. */
 export interface Frontage {
-  /** Index i of the plot edge from vertex i to vertex i+1 (local ring order). */
+  /** Index i of the DRAWN plot edge, from drawn vertex i to vertex i+1 (as the user sees it). */
   edgeIndex: number;
   /** Road right-of-way width in metres (เขตทาง), boundary to boundary. */
   roadWidth: number;
@@ -55,6 +55,7 @@ export interface AppliedRule {
 
 /** Per-edge distance the building must keep from the plot boundary. */
 export interface EdgeSetback {
+  /** Local (normalised ring) edge index. */
   edgeIndex: number;
   distance: number;
   ruleId: string;
@@ -62,6 +63,7 @@ export interface EdgeSetback {
 
 /** Height limit z <= 2 * (perpendicular distance to the far side of the road). */
 export interface SkyPlane {
+  /** Local (normalised ring) edge index. */
   edgeIndex: number;
   roadWidth: number;
   /** Height gained per metre of horizontal distance (2 for the Thai 2:1 rule). */
