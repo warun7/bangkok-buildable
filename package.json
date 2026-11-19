@@ -1,0 +1,31 @@
+{
+  "name": "bangkok-buildable",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "deploy": "npm run build && cf deploy dist"
+  },
+  "dependencies": {
+    "@deck.gl/core": "9.4",
+    "@deck.gl/layers": "9.4",
+    "@deck.gl/mapbox": "9.4",
+    "@deck.gl/mesh-layers": "9.4",
+    "maplibre-gl": "^5.24.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "cf": "^1.0.0-rc.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.1"
+  }
+}
