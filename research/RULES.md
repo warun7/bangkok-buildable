@@ -15,7 +15,7 @@ Architects, ASA), not from summaries. Quotes are kept short; clause numbers let 
   Royal Gazette vol. 143 special part 66 ง, 13 Mar 2026, in force the next day. Read page by page: it only
   rewrites the factory exemption item (1) of each zone (adds factory type 90). **No change to FAR, OSR,
   or the condo/office/hotel conditions.** Source: https://download.asa.or.th/03media/04law/cpa/bb69-bma.pdf
-- **4th revision of the plan**: still a draft (90-day hearing closed 9 Nov 2026, per news in R1). Not applied.
+- **4th revision of the plan**: still a draft (90-day public comment period, 10 Aug to 9 Nov 2026, per news and the LAD notice in R1; no Royal Gazette notice of adoption found). Not applied.
 - **Building control**: Ministerial Regulations (MR) No. 55 (2000, consolidated to No. 68 / 2020), No. 33
   (1992, consolidated to 2026), No. 7 (1974, consolidated to No. 64 / 2012) under the Building Control Act
   B.E. 2522, plus the Bangkok Building Control Ordinance B.E. 2544. Consolidated texts from
