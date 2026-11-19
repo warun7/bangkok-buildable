@@ -33,6 +33,7 @@ export function DesignCard({ design, maxFar, maxGfa, selected, onSelect }: Desig
   const farRatio = maxFar > 0 ? Math.min(1, Math.max(0, metrics.far / maxFar)) : 0;
   const farOver = metrics.far > maxFar + 1e-4;
   const passCount = checks.filter((c) => c.status === "pass").length;
+  const warnCount = checks.filter((c) => c.status === "warn").length;
   const failCount = checks.filter((c) => c.status === "fail").length;
 
   return (
@@ -52,7 +53,9 @@ export function DesignCard({ design, maxFar, maxGfa, selected, onSelect }: Desig
               {design.regime === "highrise" ? "High-rise" : "Low-rise"}
             </span>
             <span className={`check-summary-chip ${failCount > 0 ? "has-fail" : "all-pass"} tabular`}>
-              {failCount > 0 ? `${failCount} fail` : `${passCount}/${checks.length} pass`}
+              {failCount > 0
+                ? `${failCount} fail${failCount > 1 ? "s" : ""}`
+                : `All ${passCount} rules pass${warnCount ? ` · ${warnCount} note${warnCount > 1 ? "s" : ""}` : ""}`}
             </span>
           </div>
         </div>
