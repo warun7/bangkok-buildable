@@ -165,15 +165,19 @@ export const MapCanvas = forwardRef<MapCanvasHandle, MapCanvasProps>(function Ma
     const onContextMenu = (e: MouseEvent) => e.preventDefault();
     el.addEventListener("contextmenu", onContextMenu);
 
+    // The map starts on an empty placeholder style. setStyle(diff: false) below drops every source
+    // and layer added to it, so nothing (terra-draw above all) may attach until the basemap is in.
+    let basemapRequested = false;
     loadBasemapStyle(ac.signal)
       .catch(() => LIBERTY_URL)
       .then((style) => {
         if (disposed) return;
+        basemapRequested = true;
         map.setStyle(style as maplibregl.StyleSpecification, { diff: false });
       });
 
     map.on("style.load", () => {
-      if (disposed) return;
+      if (disposed || !basemapRequested) return;
       readyRef.current = true;
       setSatellite(map, latestRef.current.satellite);
 
